@@ -1,6 +1,6 @@
 // Fonction pour récupérer le domaine courant
 function getDomain() {
-    return window.location.hostname; // ex: "example.com"
+    return window.location.hostname; 
 }
 
 // Cacher les éléments déjà enregistrés pour ce site
@@ -15,7 +15,14 @@ function hideSavedElements() {
     });
 }
 
+
+
+// Flag pour la sortie et l'entrée de notre mode édition
+// 0 = normal, 1 = édition
+
+
 // Cacher l'élément cliqué et l'ajouter au stockage
+
 document.addEventListener("click", function(event) {
     if (event.target.classList.contains("cachable")) {
         const id = event.target.id;
@@ -32,10 +39,14 @@ document.addEventListener("click", function(event) {
     }
 });
 
+function resetHiddenElements() {
+    const domain = getDomain();
+    chrome.storage.local.remove([domain], () => {
+        location.reload();
+        });
+    };
 
 
-document.getElementById("reset").addEventListener("click", () => {
-    chrome.storage.local.set({ hiddenElements: [] });
-});
 
-hideSavedElements();
+
+hideSavedElements(); 
