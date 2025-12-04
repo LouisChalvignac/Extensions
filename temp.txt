@@ -1,9 +1,12 @@
-// Fonction pour récupérer le domaine courant
+// -----------------------------
+// 1. Utilitaires
+// -----------------------------
+
 function getDomain() {
-    return window.location.hostname; 
+    return window.location.hostname;
 }
 
-// Cacher les éléments déjà enregistrés pour ce site
+// Cache les éléments déjà masqués
 function hideSavedElements() {
     const domain = getDomain();
     chrome.storage.local.get([domain], (result) => {
@@ -15,9 +18,9 @@ function hideSavedElements() {
     });
 }
 
-
-
-// Flag pour la sortie et l'entrée de notre mode édition
+// -----------------------------
+// 2. Gestion du mode édition
+// -----------------------------
 
 let modeEdition = false;
 
@@ -56,19 +59,21 @@ function editClickHandler(event) {
         });
     }
 }
-// Cacher l'élément cliqué et l'ajouter au stockage
 
+// -----------------------------
+// 3. Réinitialisation
+// -----------------------------
 
-function resetHiddenElements() {
-    const domain = getDomain();
-    chrome.storage.local.remove([domain], () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.tabs.reload(tabs[0].id); //reload la page actuelle et pas le hello.html
-            });
+chrome.runtime.onMessage.addListener((request) => {
+    if (request.action === "resetPage") {
+        const domain = getDomain();
+        chrome.storage.local.remove([domain], () => {
+            location.reload();
         });
-    };
+    }
+});
 
-document.getElementById("reset").addEventListener("click", resetHiddenElements);
-document.getElementById("Mode édition").addEventListener("click", modifEdit);
-
-hideSavedElements(); 
+// -----------------------------
+// À l’ouverture de la page
+// -----------------------------
+hideSavedElements();
