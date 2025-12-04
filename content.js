@@ -1,9 +1,7 @@
-// Fonction pour récupérer le domaine courant
 function getDomain() {
     return window.location.hostname; 
 }
 
-// Cacher les éléments déjà enregistrés pour ce site
 function hideSavedElements() {
     const domain = getDomain();
     chrome.storage.local.get([domain], (result) => {
@@ -15,26 +13,17 @@ function hideSavedElements() {
     });
 }
 
-
-
-// Flag pour la sortie et l'entrée de notre mode édition
-
 let modeEdition = false;
 
-// Reçoit l'ordre depuis le background
 chrome.runtime.onMessage.addListener((request) => {
     if (request.action === "modeChanged") {
         modeEdition = request.value;
         console.log("Mode édition :", modeEdition);
-
-        if (modeEdition) {
-            activateEditMode();
-        }
+        if (modeEdition) activateEditMode();
     }
 });
 
 function activateEditMode() {
-    // On évite d'empiler plusieurs listeners
     document.removeEventListener("click", editClickHandler);
     document.addEventListener("click", editClickHandler);
 }
@@ -42,33 +31,40 @@ function activateEditMode() {
 function editClickHandler(event) {
     if (!modeEdition) return;
 
-    if (event.target.classList.contains("cachable")) {
-        const id = event.target.id;
-        event.target.style.display = "none";
+    let el = event.target;
 
-        const domain = getDomain();
-        chrome.storage.local.get([domain], (result) => {
-            let hidden = result[domain] || [];
-            if (!hidden.includes(id)) {
-                hidden.push(id);
-                chrome.storage.local.set({ [domain]: hidden });
-            }
-        });
+    // Générer un id si absent
+    if (!el.id) {
+        el.id = "hide_" + crypto.randomUUID();
     }
-}
-// Cacher l'élément cliqué et l'ajouter au stockage
 
+    const id = el.id;
+
+    el.style.display = "none";
+
+    const domain = getDomain();
+    chrome.storage.local.get([domain], (result) => {
+        let hidden = result[domain] || [];
+        if (!hidden.includes(id)) {
+            hidden.push(id);
+            chrome.storage.local.set({ [domain]: hidden });
+        }
+    });
+}
 
 function resetHiddenElements() {
     const domain = getDomain();
     chrome.storage.local.remove([domain], () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.tabs.reload(tabs[0].id); //reload la page actuelle et pas le hello.html
-            });
+            chrome.tabs.reload(tabs[0].id);
         });
-    };
+    });
+}
 
 document.getElementById("reset").addEventListener("click", resetHiddenElements);
-document.getElementById("Mode édition").addEventListener("click", modifEdit);
+document.getElementById("Mode édition").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "toggleEdit" });
+});
 
-hideSavedElements(); 
+
+hideSavedElements();
