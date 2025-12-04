@@ -42,11 +42,13 @@ document.addEventListener("click", function(event) {
 function resetHiddenElements() {
     const domain = getDomain();
     chrome.storage.local.remove([domain], () => {
-        location.reload();
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.reload(tabs[0].id); //reload la page actuelle et pas le hello.html
+            });
         });
     };
 
-
+document.getElementById("reset").addEventListener("click", resetHiddenElements);
 
 
 hideSavedElements(); 
