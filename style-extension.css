@@ -1,3 +1,7 @@
+body{
+    flex-direction: row; 
+}
+
 h1{
     font-size:small;
 }

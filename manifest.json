@@ -5,11 +5,13 @@
   "manifest_version": 3,
   "action": {
     "default_popup": "hello.html",
-    "default_icon": "icon.jpg"
+    "default_icon": "icon.png"
   },
   "permissions":[
     "storage",
-    "activeTab"
+    "activeTab",
+    "scripting",
+    "Tabs"
   ],
   "content_scripts": [
     {

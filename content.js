@@ -2,6 +2,23 @@ function getDomain() {
     return window.location.hostname; 
 }
 
+
+const highlightCSS = document.createElement("style");
+highlightCSS.textContent = `
+    .ext-highlight-hover {
+        outline: 2px dashed #ff9800 !important;
+        background: rgba(255, 152, 0, 0.1) !important;
+        cursor: pointer !important;
+    }
+
+    .ext-highlight-select {
+        outline: 3px solid #ff0000 !important;
+        background: rgba(255, 0, 0, 0.12) !important;
+    }
+`;
+document.head.appendChild(highlightCSS);
+
+
 function hideSavedElements() {
     const domain = getDomain();
     chrome.storage.local.get([domain], (result) => {
@@ -32,6 +49,12 @@ function editClickHandler(event) {
     if (!modeEdition) return;
 
     let el = event.target;
+    // Ajout d'un highlight rouge avant masquage
+    el.classList.add("ext-highlight-select");
+    setTimeout(() => {
+        el.classList.remove("ext-highlight-select");
+    }, 150); // léger effet rapide
+
 
     // Générer un id si absent
     if (!el.id) {
@@ -68,3 +91,24 @@ document.getElementById("Mode édition").addEventListener("click", () => {
 
 
 hideSavedElements();
+
+function activateEditMode() {
+    document.removeEventListener("click", editClickHandler, true);
+    document.addEventListener("click", editClickHandler, true);
+
+    // Highlight au survol
+    document.addEventListener("mouseover", highlightOver, true);
+    document.addEventListener("mouseout", highlightOut, true);
+}
+
+function highlightOver(event) {
+    if (!modeEdition) return;
+    const el = event.target;
+    el.classList.add("ext-highlight-hover");
+}
+
+function highlightOut(event) {
+    if (!modeEdition) return;
+    const el = event.target;
+    el.classList.remove("ext-highlight-hover");
+}
