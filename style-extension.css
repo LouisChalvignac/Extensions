@@ -1,5 +1,8 @@
-body{
-    flex-direction: row; 
+body {
+    display: flex;
+    flex-direction: row;      /* horizontal */
+    align-items: center;
+    gap: 10px;
 }
 
 h1{

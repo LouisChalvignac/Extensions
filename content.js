@@ -47,6 +47,8 @@ function activateEditMode() {
 
 function editClickHandler(event) {
     if (!modeEdition) return;
+        event.preventDefault();  // Empêche le lien de suivre sa cible ou d'avoir d'autres pop ups
+        event.stopPropagation();
 
     let el = event.target;
     // Ajout d'un highlight rouge avant masquage
