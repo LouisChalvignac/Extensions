@@ -17,3 +17,4 @@ Cette extension est compatible avec Chrome
 
 # Note #
 Les données sont stockées de manières locales dans local.storage
+La branche Partie 3 contient une version antèrieure du code, l'extension dans cette branche n'est potentiellement pas fonctionnelle 
