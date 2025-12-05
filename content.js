@@ -1,116 +1,151 @@
-function getDomain() {
-    return window.location.hostname; 
-}
+console.log("[Cleaner] content.js chargé");
 
+let editMode = false;
+let highlight = null;
 
-const highlightCSS = document.createElement("style");
-highlightCSS.textContent = `
-    .ext-highlight-hover {
-        outline: 2px dashed #ff9800 !important;
-        background: rgba(255, 152, 0, 0.1) !important;
-        cursor: pointer !important;
-    }
-
-    .ext-highlight-select {
-        outline: 3px solid #ff0000 !important;
-        background: rgba(255, 0, 0, 0.12) !important;
-    }
-`;
-document.head.appendChild(highlightCSS);
-
-
-function hideSavedElements() {
-    const domain = getDomain();
-    chrome.storage.local.get([domain], (result) => {
-        const hidden = result[domain] || [];
-        hidden.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = "none";
-        });
-    });
-}
-
-let modeEdition = false;
-
-chrome.runtime.onMessage.addListener((request) => {
-    if (request.action === "modeChanged") {
-        modeEdition = request.value;
-        console.log("Mode édition :", modeEdition);
-        if (modeEdition) activateEditMode();
-    }
-});
-
-function activateEditMode() {
-    document.removeEventListener("click", editClickHandler);
-    document.addEventListener("click", editClickHandler);
-}
-
-function editClickHandler(event) {
-    if (!modeEdition) return;
-        event.preventDefault();  // Empêche le lien de suivre sa cible ou d'avoir d'autres pop ups
-        event.stopPropagation();
-
-    let el = event.target;
-    // Ajout d'un highlight rouge avant masquage
-    el.classList.add("ext-highlight-select");
-    setTimeout(() => {
-        el.classList.remove("ext-highlight-select");
-    }, 150); // léger effet rapide
-
-
-    // Générer un id si absent
-    if (!el.id) {
-        el.id = "hide_" + crypto.randomUUID();
-    }
-
-    const id = el.id;
-
-    el.style.display = "none";
-
-    const domain = getDomain();
-    chrome.storage.local.get([domain], (result) => {
-        let hidden = result[domain] || [];
-        if (!hidden.includes(id)) {
-            hidden.push(id);
-            chrome.storage.local.set({ [domain]: hidden });
+// Stockage d'un sélecteur pour le domaine courant
+function saveSelector(sel) {
+    const domain = location.hostname;
+    chrome.storage.local.get([domain], res => {
+        const arr = res[domain] || [];
+        if (!arr.includes(sel)) {
+            arr.push(sel);
+            chrome.storage.local.set({ [domain]: arr });
         }
     });
 }
 
-function resetHiddenElements() {
-    const domain = getDomain();
-    chrome.storage.local.remove([domain], () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.tabs.reload(tabs[0].id);
+function applySaved() {
+    const domain = location.hostname;
+    chrome.storage.local.get([domain], res => {
+        (res[domain] || []).forEach(sel => {
+            document.querySelectorAll(sel).forEach(el => el.style.display = "none");
         });
     });
 }
 
-document.getElementById("reset").addEventListener("click", resetHiddenElements);
-document.getElementById("Mode édition").addEventListener("click", () => {
-    chrome.runtime.sendMessage({ action: "toggleEdit" });
+// ---------------------------------------------------------
+// MODE ÉDITION + HIGHLIGHT SUR SURVOL
+// ---------------------------------------------------------
+
+function activateEdit() {
+    editMode = true;
+    document.addEventListener("mousemove", onMove, true);
+    document.addEventListener("click", onClick, true);
+}
+
+function deactivateEdit() {
+    editMode = false;
+    document.removeEventListener("mousemove", onMove, true);
+    document.removeEventListener("click", onClick, true);
+
+    if (highlight) highlight.remove();
+}
+
+function onMove(e) {
+    if (!editMode) return;
+
+    if (highlight) highlight.remove();
+
+    const r = e.target.getBoundingClientRect();
+    highlight = document.createElement("div");
+    highlight.style.cssText = `
+        position:fixed;
+        left:${r.left}px;
+        top:${r.top}px;
+        width:${r.width}px;
+        height:${r.height}px;
+        background: rgba(242, 255, 0, 0.48);
+        outline: thick dashed #ff0000ff;
+        pointer-events:none;
+        z-index:999999;
+        cursor: pointer
+    `;
+
+    document.body.appendChild(highlight);
+}
+
+function onClick(e) {
+    if (!editMode) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const selector = getSelector(e.target);
+    saveSelector(selector);
+
+    e.target.style.display = "none";
+
+    if (highlight) highlight.remove();
+}
+
+// Génère un sélecteur CSS unique
+function getSelector(el) {
+    if (el.id) {
+        return "#" + CSS.escape(el.id);
+    }
+
+    let path = [];
+    let current = el;
+
+    while (current && current.nodeType === 1 && current !== document.body) {
+
+        let selector = current.tagName.toLowerCase();
+
+        if (current.classList.length > 0) {
+            selector += "." + [...current.classList].map(c => CSS.escape(c)).join(".");
+        } else {
+            const parent = current.parentElement;
+            if (parent) {
+                const index = [...parent.children].indexOf(current) + 1;
+                selector += `:nth-child(${index})`;
+            }
+        }
+
+        path.unshift(selector);
+        current = current.parentElement;
+    }
+
+    return path.join(" > ");
+}
+
+// ---------------------------------------------------------
+// LISTENER MESSAGES
+// ---------------------------------------------------------
+
+chrome.runtime.onMessage.addListener(msg => {
+    if (msg.action === "modeChanged") {
+        msg.value ? activateEdit() : deactivateEdit();
+    }
+
+    if (msg.action === "reset") {
+        chrome.storage.local.clear();
+        location.reload();
+    }
 });
 
+// saveSelector.js
 
-hideSavedElements();
+/**
+ * Sauvegarde un sélecteur pour le domaine courant dans chrome.storage.local
+ * @param {string} sel - le sélecteur CSS à enregistrer
+ */
+function saveSelector(sel) {
+    const domain = location.hostname;
 
-function activateEditMode() {
-    document.removeEventListener("click", editClickHandler, true);
-    document.addEventListener("click", editClickHandler, true);
+    chrome.storage.local.get([domain], res => {
+        // On récupère la liste existante ou un tableau vide
+        const arr = Array.isArray(res[domain]) ? res[domain] : [];
 
-    // Highlight au survol
-    document.addEventListener("mouseover", highlightOver, true);
-    document.addEventListener("mouseout", highlightOut, true);
+        // On évite les doublons
+        if (!arr.includes(sel)) {
+            arr.push(sel);
+            chrome.storage.local.set({ [domain]: arr }, () => {
+                console.log(`Sélecteur "${sel}" ajouté pour le domaine ${domain}`);
+            });
+        }
+    });
 }
 
-function highlightOver(event) {
-    if (!modeEdition) return;
-    const el = event.target;
-    el.classList.add("ext-highlight-hover");
-}
-
-function highlightOut(event) {
-    if (!modeEdition) return;
-    const el = event.target;
-    el.classList.remove("ext-highlight-hover");
-}
+// Initialisation
+applySaved();

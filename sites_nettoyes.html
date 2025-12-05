@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Popup — Sites nettoyés</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;font-size:14px;}
+    body{margin:0;background:#f6f7fb;color:#111;width:360px;min-height:480px;overflow:hidden}
+    header{padding:10px 14px;border-bottom:1px solid #e3e6ee;background:#fff;display:flex;align-items:center;gap:12px}
+    header h1{font-size:14px;margin:0;flex:1}
+
+    .panel{background:#fff;border:1px solid #e6e9f2;border-radius:10px;padding:10px;margin:10px;box-shadow:0 6px 20px rgba(18,24,38,0.04)}
+
+    .sites-list{max-height:180px;overflow:auto;margin-top:8px}
+    .site-item{display:flex;align-items:center;justify-content:space-between;padding:6px;border-radius:8px;cursor:pointer}
+    .site-item:hover{background:#f3f6ff}
+    .badge{background:#eef2ff;color:#27408b;padding:2px 6px;border-radius:999px;font-weight:600;font-size:11px}
+
+    .items-list{max-height:180px;overflow:auto;margin-top:8px}
+    .item-row{display:flex;align-items:center;gap:6px;padding:6px;border-bottom:1px dashed #eef2ff}
+    .item-row .id{font-family:monospace;font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    button{background:#e8eefc;border:1px solid #cfdffb;padding:4px 6px;border-radius:8px;cursor:pointer;font-size:12px}
+    button.small{padding:3px 5px;font-size:11px}
+
+    textarea{width:100%;height:100px;border:1px solid #e3e6ee;border-radius:8px;padding:6px;font-family:monospace;font-size:12px}
+
+    .empty{padding:18px;text-align:center;color:#6b7280;font-size:13px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sites nettoyés</h1>
+    <button id="refresh">↻</button>
+  </header>
+
+  <section class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>Domaines</strong>
+      <span id="count" class="badge">0</span>
+    </div>
+    <input id="search" placeholder="Rechercher" style="margin-top:6px;padding:6px;border-radius:8px;border:1px solid #e6e9f2;width:100%" />
+    <div class="sites-list" id="sitesList">
+      <div class="empty">Aucun site nettoyé.</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <strong>Détails</strong>
+    <div id="domainHeader" style="margin-top:6px;color:#444;font-size:13px">Sélectionnez un domaine</div>
+    <div class="items-list" id="itemsList">
+      <div class="empty">Sélectionnez un domaine pour afficher ses éléments.</div>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px">
+      <button id="openSite" class="small">Ouvrir</button>
+      <button id="clearDomain" class="small">Supprimer domaine</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <strong>Import / Export JSON</strong>
+    <textarea id="jsonArea" placeholder='{"example.com":["id1","id2"]}'></textarea>
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px">
+      <button id="export">Exporter</button>
+      <button id="applyImport">Importer</button>
+      <button id="clearJson">Vider</button>
+    </div>
+  </section>
+
+  <section class="panel" style="text-align:center">
+    <button id="clearAll" style="background:#ffdddd;border-color:#ffb4b4">Tout réinitialiser</button>
+  </section>
+
+<script>
+/* --- JS POPUP --- */
+
+// Récupérer tous les domaines (clés avec tableau)
+async function getAllDomains() {
+  return new Promise(resolve => {
+    chrome.storage.local.get(null, res => {
+      const domains = Object.entries(res)
+        .filter(([k,v]) => Array.isArray(v))
+        .map(([k]) => k);
+      resolve(domains);
+    });
+  });
+}
+
+// Affichage des domaines
+async function renderDomains(filter = '') {
+  const domains = await getAllDomains();
+  const list = document.getElementById('sitesList');
+  list.innerHTML = '';
+
+  const filtered = domains.filter(d => d.includes(filter));
+  document.getElementById('count').textContent = filtered.length;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Aucun domaine.</div>';
+    return;
+  }
+
+  filtered.forEach(domain => {
+    chrome.storage.local.get([domain], res => {
+      const ids = res[domain] || [];
+      const row = document.createElement('div');
+      row.className = 'site-item';
+      row.dataset.domain = domain;
+      row.innerHTML = `<div>
+        <div style="font-weight:600">${domain}</div>
+        <div style="font-size:12px;color:#666">${ids.length} éléments</div>
+      </div>`;
+      row.addEventListener('click', () => selectDomain(domain));
+      list.appendChild(row);
+    });
+  });
+}
+
+// Afficher éléments d’un domaine
+async function selectDomain(domain) {
+  chrome.storage.local.get([domain], res => {
+    const ids = res[domain] || [];
+    const header = document.getElementById('domainHeader');
+    header.textContent = `Domaine : ${domain}`;
+    header.dataset.domain = domain;
+
+    const list = document.getElementById('itemsList');
+    list.innerHTML = '';
+
+    if (ids.length === 0) {
+      list.innerHTML = '<div class="empty">Aucun élément.</div>';
+      return;
+    }
+
+    ids.forEach(id => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `<div class="id">${id}</div>
+        <button class="small remove">Suppr.</button>`;
+      row.querySelector('.remove').addEventListener('click', () => {
+        removeIdFromDomain(domain, id).then(() => {
+          selectDomain(domain);
+          renderDomains(document.getElementById('search').value.trim());
+        });
+      });
+      list.appendChild(row);
+    });
+  });
+}
+
+// Supprimer un élément
+function removeIdFromDomain(domain, id) {
+  return new Promise(resolve => {
+    chrome.storage.local.get([domain], res => {
+      const arr = (res[domain] || []).filter(x => x !== id);
+      if (arr.length === 0) chrome.storage.local.remove([domain], resolve);
+      else chrome.storage.local.set({ [domain]: arr }, resolve);
+    });
+  });
+}
+
+// Supprimer un domaine
+function clearDomain(domain) {
+  chrome.storage.local.remove([domain], () => {
+    renderDomains('');
+    document.getElementById('itemsList').innerHTML = '<div class="empty">Sélectionnez un domaine.</div>';
+    document.getElementById('domainHeader').textContent = 'Sélectionnez un domaine';
+  });
+}
+
+// Tout supprimer
+function clearAll() {
+  if (!confirm('Tout supprimer ?')) return;
+  chrome.storage.local.get(null, items => {
+    const keys = Object.entries(items)
+      .filter(([k,v]) => Array.isArray(v))
+      .map(([k]) => k);
+    chrome.storage.local.remove(keys, () => renderDomains(''));
+  });
+}
+
+// Export JSON
+function exportJSON() {
+  chrome.storage.local.get(null, res => {
+    const entries = Object.fromEntries(Object.entries(res).filter(([k,v]) => Array.isArray(v)));
+    const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sites_nettoyes.json';
+    a.click();
+  });
+}
+
+// Import JSON
+function applyImportText(text) {
+  let parsed;
+  try { parsed = JSON.parse(text); }
+  catch(e) { return alert('JSON incorrect'); }
+
+  const valid = {};
+  for (const [k,v] of Object.entries(parsed)) if (Array.isArray(v)) valid[k] = v;
+
+  chrome.storage.local.set(valid, () => {
+    alert('Import OK');
+    renderDomains('');
+  });
+}
+
+/* --- Boutons et interactions --- */
+document.getElementById('refresh').addEventListener('click', () => renderDomains(''));
+document.getElementById('search').addEventListener('input', e => renderDomains(e.target.value.trim()));
+document.getElementById('clearAll').addEventListener('click', clearAll);
+document.getElementById('export').addEventListener('click', exportJSON);
+document.getElementById('applyImport').addEventListener('click', () => {
+  const text = document.getElementById('jsonArea').value.trim();
+  applyImportText(text);
+});
+document.getElementById('clearJson').addEventListener('click', () => {
+  document.getElementById('jsonArea').value = '';
+});
+document.getElementById('openSite').addEventListener('click', () => {
+  const domain = document.getElementById('domainHeader').dataset.domain;
+  if (!domain) return alert('Sélectionnez un domaine');
+  chrome.tabs.create({ url: 'https://' + domain });
+});
+document.getElementById('clearDomain').addEventListener('click', () => {
+  const domain = document.getElementById('domainHeader').dataset.domain;
+  if (!domain) return alert('Sélectionnez un domaine');
+  if (!confirm(`Supprimer tous les éléments pour ${domain} ?`)) return;
+  clearDomain(domain);
+});
+
+// Affichage initial
+document.addEventListener('DOMContentLoaded', () => {
+  renderDomains();
+});
+</script>
+</body>
+</html>

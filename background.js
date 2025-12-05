@@ -1,22 +1,18 @@
-// background.js
-
-// État global du mode édition
 let modeEdition = false;
 
-// Écoute les messages envoyés depuis le content-script ou le popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "toggleEdit") {
-        // Bascule le mode édition
+// Changement du mode édition
+chrome.runtime.onMessage.addListener((msg, sender, res) => {
+    if (msg.action === "toggleEdit") {
+
         modeEdition = !modeEdition;
 
-        // Envoie le nouvel état au content-script actif
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0].id) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    action: "modeChanged",
-                    value: modeEdition
-                });
-            }
+        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: "modeChanged",
+                value: modeEdition
+            });
         });
+
+        res({ ok: true });
     }
 });
