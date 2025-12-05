@@ -147,5 +147,13 @@ function saveSelector(sel) {
     });
 }
 
+function listingDomains() {
+    varTemp="";
+    for(let i = 0; i < localStorage.length; i++) {
+        varTemp=varTemp+localStorage.key(i)+" = "+localStorage.getItem(localStorage.key(i)).length+"<br>";
+    };
+    document.getElementById("listSite").innerHTML = varTemp;
+}
+
 // Initialisation
 applySaved();
