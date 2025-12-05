@@ -1,9 +1,9 @@
 console.log("[Cleaner] content.js chargé");
 
 let editMode = false;
-let highlight = null;
+let highlightBox = null;
 
-// Stockage d'un sélecteur pour le domaine courant
+// Sauvegarde de sélecteur
 function saveSelector(sel) {
     const domain = location.hostname;
     chrome.storage.local.get([domain], res => {
@@ -15,83 +15,78 @@ function saveSelector(sel) {
     });
 }
 
+// Appliquer les éléments masqués
 function applySaved() {
     const domain = location.hostname;
     chrome.storage.local.get([domain], res => {
         (res[domain] || []).forEach(sel => {
-            document.querySelectorAll(sel).forEach(el => el.style.display = "none");
+            document.querySelectorAll(sel).forEach(el => {
+                el.style.display = "none";
+            });
         });
     });
 }
 
-// ---------------------------------------------------------
-// MODE ÉDITION + HIGHLIGHT SUR SURVOL
-// ---------------------------------------------------------
-
+// Activation du mode édition
 function activateEdit() {
     editMode = true;
     document.addEventListener("mousemove", onMove, true);
     document.addEventListener("click", onClick, true);
 }
 
+// Désactivation
 function deactivateEdit() {
     editMode = false;
     document.removeEventListener("mousemove", onMove, true);
     document.removeEventListener("click", onClick, true);
-
-    if (highlight) highlight.remove();
+    if (highlightBox) highlightBox.remove();
 }
 
+// Survol
 function onMove(e) {
     if (!editMode) return;
 
-    if (highlight) highlight.remove();
+    if (highlightBox) highlightBox.remove();
 
     const r = e.target.getBoundingClientRect();
-    highlight = document.createElement("div");
-    highlight.style.cssText = `
+    highlightBox = document.createElement("div");
+    highlightBox.style.cssText = `
         position:fixed;
         left:${r.left}px;
         top:${r.top}px;
         width:${r.width}px;
         height:${r.height}px;
-        background: rgba(242, 255, 0, 0.48);
-        outline: thick dashed #ff0000ff;
+        outline: 2px solid red;
+        background: rgba(255,0,0,0.1);
         pointer-events:none;
         z-index:999999;
-        cursor: pointer
     `;
-
-    document.body.appendChild(highlight);
+    document.body.appendChild(highlightBox);
 }
 
+// Click pour supprimer
 function onClick(e) {
     if (!editMode) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    const selector = getSelector(e.target);
-    saveSelector(selector);
+    const sel = getSelector(e.target);
+    saveSelector(sel);
 
     e.target.style.display = "none";
-
-    if (highlight) highlight.remove();
 }
 
-// Génère un sélecteur CSS unique
+// Génère un sélecteur unique
 function getSelector(el) {
-    if (el.id) {
-        return "#" + CSS.escape(el.id);
-    }
+    if (el.id) return "#" + CSS.escape(el.id);
 
     let path = [];
     let current = el;
 
     while (current && current.nodeType === 1 && current !== document.body) {
-
         let selector = current.tagName.toLowerCase();
-
+        
         if (current.classList.length > 0) {
             selector += "." + [...current.classList].map(c => CSS.escape(c)).join(".");
         } else {
@@ -109,18 +104,16 @@ function getSelector(el) {
     return path.join(" > ");
 }
 
-// ---------------------------------------------------------
-// LISTENER MESSAGES
-// ---------------------------------------------------------
-
+// Réception du background
 chrome.runtime.onMessage.addListener(msg => {
     if (msg.action === "modeChanged") {
         msg.value ? activateEdit() : deactivateEdit();
     }
 
     if (msg.action === "reset") {
-        chrome.storage.local.clear();
-        location.reload();
+        chrome.storage.local.remove(location.hostname, () => {
+            location.reload();
+        });
     }
 });
 
@@ -145,14 +138,6 @@ function saveSelector(sel) {
             });
         }
     });
-}
-
-function listingDomains() {
-    varTemp="";
-    for(let i = 0; i < localStorage.length; i++) {
-        varTemp=varTemp+localStorage.key(i)+" = "+localStorage.getItem(localStorage.key(i)).length+"<br>";
-    };
-    document.getElementById("listSite").innerHTML = varTemp;
 }
 
 // Initialisation

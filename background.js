@@ -1,18 +1,27 @@
-let modeEdition = false;
+let editMode = false;
 
-// Changement du mode édition
-chrome.runtime.onMessage.addListener((msg, sender, res) => {
+function sendToActiveTab(message) {
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        if (tabs && tabs[0] && tabs[0].id) {
+            chrome.tabs.sendMessage(tabs[0].id, message);
+        }
+    });
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.action === "toggleEdit") {
+        editMode = !editMode;
+        const payload = { action: "modeChanged", value: editMode };
 
-        modeEdition = !modeEdition;
-
-        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-            chrome.tabs.sendMessage(tabs[0].id, {
-                action: "modeChanged",
-                value: modeEdition
-            });
-        });
-
-        res({ ok: true });
+        const tabId = sender && sender.tab && sender.tab.id;
+        if (tabId) chrome.tabs.sendMessage(tabId, payload);
+        else sendToActiveTab(payload);
+    }
+    
+    if (msg.action === "reset") {
+        const payload = { action: "reset" };
+        const tabId = sender && sender.tab && sender.tab.id;
+        if (tabId) chrome.tabs.sendMessage(tabId, payload);
+        else sendToActiveTab(payload);
     }
 });
