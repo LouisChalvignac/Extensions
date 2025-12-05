@@ -7,19 +7,43 @@
 
   <style>
     :root{font-family:system-ui,Segoe UI,Roboto,Arial;font-size:14px;}
-    body{margin:0;background:#f6f7fb;color:#111;width:360px;min-height:480px;}
+    body{margin:0;background:rgb(35,34,37);color:#e6e6e6;width:360px;min-height:480px;}
 
-    header{padding:10px;background:#fff;border-bottom:1px solid #ddd;display:flex;align-items:center}
-    header h1{font-size:14px;margin:0;flex:1}
+    header{padding:10px;background:#242424;border-bottom:1px solid #3a3a3a;display:flex;align-items:center}
+    header h1{font-size:14px;margin:0;flex:1;color:#fff}
 
-    .panel{background:#fff;margin:10px;padding:10px;border:1px solid #ddd;border-radius:8px}
+    .panel{background:#2a2a2a;margin:10px;padding:10px;border:1px solid #3a3a3a;border-radius:8px}
 
     .site-item{display:flex;justify-content:space-between;padding:6px;border-radius:6px;cursor:pointer}
-    .site-item:hover{background:#eef3ff}
+    .site-item:hover{background:#33343a}
 
-    .badge{background:#dde6ff;padding:2px 6px;border-radius:12px}
+    .badge{background:#3b3b3b;padding:2px 6px;border-radius:12px;color:#e6e6e6}
 
-    .item-row{display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #eee}
+    .item-row{display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #3a3a3a}
+    /* Danger / reset button style */
+    .danger-button{
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 0;
+      background-color: rgb(255, 56, 86);
+      letter-spacing: 1px;
+      font-size: 12px;
+      transition: all 0.18s ease;
+      box-shadow: rgb(201, 46, 70) 0px 4px 0px 0px;
+      color: hsl(0, 0%, 100%);
+      cursor: pointer;
+    }
+
+    .danger-button:hover{
+      box-shadow: rgb(201, 46, 70) 0px 2px 0px 0px;
+    }
+
+    .danger-button:active{
+      background-color: rgb(255, 56, 86);
+      box-shadow: rgb(201, 46, 70) 0px 0px 0px 0px;
+      transform: translateY(2px);
+      transition: 120ms;
+    }
   </style>
 </head>
 
@@ -41,7 +65,7 @@
 </section>
 
 <section class="panel" style="text-align:center">
-  <button id="clearAll" style="background:#ffdddd;border-color:#ffb4b4">Tout réinitialiser</button>
+  <button id="clearAll" class="danger-button">Tout réinitialiser</button>
 </section>
 
 <script src="popup.js"></script>

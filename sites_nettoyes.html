@@ -7,27 +7,52 @@
   <title>Popup — Sites nettoyés</title>
   <style>
     :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;font-size:14px;}
-    body{margin:0;background:#f6f7fb;color:#111;width:360px;min-height:480px;overflow:hidden}
-    header{padding:10px 14px;border-bottom:1px solid #e3e6ee;background:#fff;display:flex;align-items:center;gap:12px}
-    header h1{font-size:14px;margin:0;flex:1}
+    body{margin:0;background:rgb(35,34,37);color:#e6e6e6;width:360px;min-height:480px;overflow:hidden}
+    header{padding:10px 14px;border-bottom:1px solid #3a3a3a;background:#242424;display:flex;align-items:center;gap:12px}
+    header h1{font-size:14px;margin:0;flex:1;color:#fff}
 
-    .panel{background:#fff;border:1px solid #e6e9f2;border-radius:10px;padding:10px;margin:10px;box-shadow:0 6px 20px rgba(18,24,38,0.04)}
+    .panel{background:#2a2a2a;border:1px solid #3a3a3a;border-radius:10px;padding:10px;margin:10px;box-shadow:none}
 
     .sites-list{max-height:180px;overflow:auto;margin-top:8px}
     .site-item{display:flex;align-items:center;justify-content:space-between;padding:6px;border-radius:8px;cursor:pointer}
-    .site-item:hover{background:#f3f6ff}
-    .badge{background:#eef2ff;color:#27408b;padding:2px 6px;border-radius:999px;font-weight:600;font-size:11px}
+    .site-item:hover{background:#33343a}
+    .badge{background:#3b3b3b;color:#e6e6e6;padding:2px 6px;border-radius:999px;font-weight:600;font-size:11px}
 
     .items-list{max-height:180px;overflow:auto;margin-top:8px}
-    .item-row{display:flex;align-items:center;gap:6px;padding:6px;border-bottom:1px dashed #eef2ff}
+    .item-row{display:flex;align-items:center;gap:6px;padding:6px;border-bottom:1px dashed #3a3a3a}
     .item-row .id{font-family:monospace;font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-    button{background:#e8eefc;border:1px solid #cfdffb;padding:4px 6px;border-radius:8px;cursor:pointer;font-size:12px}
+    button{background:#444;border:1px solid #555;padding:4px 6px;border-radius:8px;cursor:pointer;font-size:12px;color:#eee}
     button.small{padding:3px 5px;font-size:11px}
 
-    textarea{width:100%;height:100px;border:1px solid #e3e6ee;border-radius:8px;padding:6px;font-family:monospace;font-size:12px}
+    textarea{width:100%;height:100px;border:1px solid #3a3a3a;border-radius:8px;padding:6px;font-family:monospace;font-size:12px;background:#222;color:#e6e6e6}
 
-    .empty{padding:18px;text-align:center;color:#6b7280;font-size:13px}
+    .empty{padding:18px;text-align:center;color:#9aa0a6;font-size:13px}
+
+    /* Danger / reset button style (large red) */
+    .danger-button{
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 0;
+      background-color: rgb(255, 56, 86);
+      letter-spacing: 1px;
+      font-size: 12px;
+      transition: all 0.18s ease;
+      box-shadow: rgb(201, 46, 70) 0px 4px 0px 0px;
+      color: hsl(0, 0%, 100%);
+      cursor: pointer;
+    }
+
+    .danger-button:hover{
+      box-shadow: rgb(201, 46, 70) 0px 2px 0px 0px;
+    }
+
+    .danger-button:active{
+      background-color: rgb(255, 56, 86);
+      box-shadow: rgb(201, 46, 70) 0px 0px 0px 0px;
+      transform: translateY(2px);
+      transition: 120ms;
+    }
   </style>
 </head>
 <body >
@@ -70,7 +95,7 @@
   </section>
 
   <section class="panel" style="text-align:center">
-    <button id="clearAll" style="background:#ffdddd;border-color:#ffb4b4" onclick="clearAll()">Tout réinitialiser</button>
+    <button id="clearAll" class="danger-button" onclick="clearAll()">Tout réinitialiser</button>
   </section>
 
 <script>
