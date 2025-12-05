@@ -56,8 +56,8 @@ function onMove(e) {
         top:${r.top}px;
         width:${r.width}px;
         height:${r.height}px;
-        outline: 2px solid red;
-        background: rgba(255,0,0,0.1);
+        outline: 2px dashed red;
+        background: rgba(221, 255, 0, 0.1);
         pointer-events:none;
         z-index:999999;
     `;
