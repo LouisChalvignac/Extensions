@@ -12,7 +12,7 @@ Cette extension est compatible avec Chrome
 4. Extraire l'archive à l'endroit de votre choix (de préférence facile d'accès)
 5. Sur le menu Gerer les extensions de Chrome, cliquer sur Charger l'extension non empaquetée
 6. Selectionner le dossier que vous avez extrait de l'archive
-7. L'extension est installée, vous pouvez désactiver le mode développeur
+7. L'extension est installée, ne désactivez pas le mode développeur si vous voulez continuer à utiliser l'extension
     
 
 # Note #
